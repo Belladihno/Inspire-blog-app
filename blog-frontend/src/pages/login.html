@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - Inspire Blog</title>
+    <link rel="stylesheet" href="../css/styles.css" />
+    <script src="../js/main.js" defer></script>
+  </head>
+  <body class="auth-page">
+    <div class="page" id="login-page">
+      <div class="auth-container">
+        <div class="auth-header">
+          <h1 class="auth-brand" onclick="showLanding()">inspire</h1>
+        </div>
+
+        <div class="auth-form-container">
+          <h2 class="auth-title">Welcome back</h2>
+          <p class="auth-subtitle">Sign in to continue your journey</p>
+
+          <form class="auth-form" id="login-form">
+            <div class="form-group">
+              <input
+                type="email"
+                id="login-email"
+                placeholder="Email address"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <input
+                type="password"
+                id="login-password"
+                placeholder="Password"
+                required
+              />
+            </div>
+            <div class="form-options">
+              <label class="checkbox-container">
+                <input type="checkbox" id="remember-me" />
+                <span class="checkmark"></span>
+                Remember me
+              </label>
+              <a href="#forgot" class="forgot-link">Forgot password?</a>
+            </div>
+            <button type="submit" class="btn-auth">Sign In</button>
+          </form>
+
+          <div class="auth-divider">
+            <span>or</span>
+          </div>
+
+          <button class="btn-social google">
+            <span class="social-icon">G</span>
+            Continue with Google
+          </button>
+          <button class="btn-social facebook">
+            <span class="social-icon">f</span>
+            Continue with Facebook
+          </button>
+
+          <p class="auth-switch">
+            Don't have an account?
+            <a href="#signup" onclick="showSignup()">Sign up</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
