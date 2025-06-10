@@ -1,6 +1,6 @@
 import express from "express";
 import AuthControllers from "../Controllers/authControllers.js";
-import protect from "../Middlewares/protection.js";
+import protectRoute from "../Middlewares/protection.js";
 
 const router = express.Router();
 
@@ -15,7 +15,7 @@ router.patch(
   AuthControllers.verifyForgotPasswordCode
 );
 
-router.use(protect);
+router.use(protectRoute);
 
 router.post("/logout", AuthControllers.logout);
 router.patch("/send-verification-code", AuthControllers.sendVerificationCode);

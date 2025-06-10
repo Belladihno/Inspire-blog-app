@@ -1,10 +1,10 @@
 import express from 'express'
 import UserController from '../Controllers/userController.js'
-import protect from '../Middlewares/protection.js'
+import protectRoute from '../Middlewares/protection.js'
 
 const router = express.Router();
 
-router.use(protect);
+router.use(protectRoute);
 
 router.get('/all-users', UserController.getAllUsers)
 router.patch('/update-user', UserController.updateUserData);

@@ -16,6 +16,10 @@ const contentSchema = Joi.string().required().trim().max(1000).messages({
   "string-max": "content must not exceed 1000 words",
 });
 
+const commentSchema = Joi.string().required().trim().max(1000).messages({
+  "string-max": "content must not exceed 1000 words",
+});
+
 const VALID_ROLES = ["user", "admin", "editor", "author", "moderator"];
 
 const roleSchema = Joi.string()
@@ -47,7 +51,7 @@ const usernameSchema = Joi.string()
 
 const emailCodeSchema = Joi.number().required();
 
-const userIdSchema = Joi.string().required();
+// const userIdSchema = Joi.string().required();
 
 const PASSWORD_PATTERN = new RegExp(
   "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$"
@@ -92,7 +96,7 @@ const acceptCodeSchema = Joi.object({
 const updatePasswordSchema = Joi.object({
   oldPassword: passwordSchema,
   newPassword: passwordSchema,
-  confirmPassword: passwordSchema
+  confirmPassword: passwordSchema,
 });
 
 const acceptForgotCodeSchema = Joi.object({
@@ -106,7 +110,7 @@ const createPostSchema = Joi.object({
   content: contentSchema,
   author: authorSchema,
   category: categorySchema,
-  userId: userIdSchema,
+  // userId: userIdSchema,
 });
 
 const updatePostSchema = Joi.object({
@@ -114,7 +118,7 @@ const updatePostSchema = Joi.object({
   content: Joi.string().min(10).max(1000).trim(),
   author: Joi.string().min(3).max(100).trim(),
   category: Joi.string().min(3).max(100).trim(),
-  userId: userIdSchema,
+  // userId: userIdSchema,
 })
   .min(1)
   .message({
@@ -124,7 +128,17 @@ const updatePostSchema = Joi.object({
 const updateUserDataSchema = Joi.object({
   name: Joi.string().trim(),
   username: Joi.string().trim(),
-  userId: userIdSchema,
+  // userId: userIdSchema,
+});
+
+const createCommentSchema = Joi.object({
+  content: commentSchema,
+  // userId: userIdSchema,
+});
+
+const updateCommentSchema = Joi.object({
+  content: commentSchema,
+  // userId: userIdSchema,
 });
 
 export default {
@@ -136,4 +150,6 @@ export default {
   createPostSchema,
   updatePostSchema,
   updateUserDataSchema,
+  createCommentSchema,
+  updateCommentSchema,
 };

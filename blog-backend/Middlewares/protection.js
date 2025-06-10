@@ -2,87 +2,67 @@ import jwt from "jsonwebtoken";
 import User from "../Models/userModel.js";
 import { promisify } from "util";
 
-class Protection {
-  constructor() {
-    this.secret = process.env.TOKEN_SECRET;
+
+const extractToken = (req) => {
+  if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
+    return req.headers.authorization.split(" ")[1];
   }
+  return null; 
+};
 
-  protect = async (req, res, next) => {
-    try {
-      const token = this.extractToken(req);
 
-      if (!token) {
-        return this.sendError(res, 401, "Please login to access this resource");
-      }
+const validateToken = async (token) => {
+  const secret = process.env.TOKEN_SECRET;
+  const decoded = await promisify(jwt.verify)(token, secret);
+  return decoded;
+};
 
-      const decoded = await this.verifyToken(token);
-      const currentUser = await this.findUser(decoded.userId);
+const getUser = async (userId) => {
+  return await User.findById(userId);
+};
 
-      if (!currentUser) {
-        return this.sendError(res, 401, "User no longer exists");
-      }
+// checks if user changed password after token was created
+const changedPasswordAfterToken = (user, tokenCreatedTime) => {
+  if (user.passwordChangedAt) {
+    const passwordChangeTime = parseInt(user.passwordChangedAt.getTime() / 1000, 10);
+    return tokenCreatedTime < passwordChangeTime;
+  }
+  return false;
+};
 
-      if (this.isPasswordChanged(currentUser, decoded.iat)) {
-        return this.sendError(
-          res,
-          401,
-          "Password was recently changed. Please login again"
-        );
-      }
+const sendErrorResponse = (res, statusCode, message) => {
+  return res.status(statusCode).json({
+    status: "fail",
+    message: message,
+  });
+};
 
-      req.user = currentUser;
-      next();
-    } catch (error) {
-      console.error("Auth error:", error.message);
-      return this.sendError(res, 401, error.message || "Authentication failed");
+const protectRoute = async (req, res, next) => {
+  try {
+    const token = extractToken(req);
+    
+    if (!token) {
+      return sendErrorResponse(res, 401, "Please login to access this resource");
     }
-  };
 
-  extractToken(req) {
-    if (
-      req.headers.authorization &&
-      req.headers.authorization.startsWith("Bearer")
-    ) {
-      return req.headers.authorization.split(" ")[1];
+    const decodedToken = await validateToken(token);
+    const currentUser = await getUser(decodedToken.userId);
+    
+    if (!currentUser) {
+      return sendErrorResponse(res, 401, "User no longer exists");
     }
-    return null;
-  }
 
-  async verifyToken(token) {
-    try {
-      return await promisify(jwt.verify)(token, this.secret);
-    } catch (error) {
-      if (error.name === "JsonWebTokenError") {
-        throw new Error("Invalid token");
-      }
-      if (error.name === "TokenExpiredError") {
-        throw new Error("Token has expired");
-      }
-      throw new Error("Authentication failed");
+    if (changedPasswordAfterToken(currentUser, decodedToken.iat)) {
+      return sendErrorResponse(res, 401, "Password was recently changed. Please login again");
     }
-  }
 
-  async findUser(userId) {
-    return await User.findById(userId);
-  }
-
-  isPasswordChanged(user, tokenIssuedAt) {
-    if (user.passwordChangedAt) {
-      const changedTimestamp = parseInt(
-        user.passwordChangedAt.getTime() / 1000,
-        10
-      );
-      return tokenIssuedAt < changedTimestamp;
-    }
-    return false;
-  }
-
-  sendError(res, statusCode, message) {
-    return res.status(statusCode).json({
-      status: "fail",
-      message,
-    });
+    req.user = currentUser;
+    next(); 
+    
+  } catch (error) {
+    console.error("Auth error:", error.message);
+    return sendErrorResponse(res, 401, error.message || "Authentication failed");
   }
 }
 
-export default new Protection().protect;
+export default protectRoute;

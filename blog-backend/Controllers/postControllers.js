@@ -2,6 +2,7 @@ import Post from "../Models/postModel.js";
 import APIFeatures from "../utils/apiFeatures.js";
 import validator from "../Middlewares/validator.js";
 import AppError from "../Utils/appError.js";
+import Comment from "../Models/commentModel.js";
 
 class PostControllers {
   async getPosts(req, res, next) {
@@ -15,7 +16,7 @@ class PostControllers {
       const posts = await features.query.populate("author", "name email");
       const count = await Post.countDocuments();
 
-      // Check if there are any users
+      // Checks if there are any users
       if (!posts || posts.length === 0) {
         return next(new AppError("No posts found!", 400));
       }
@@ -62,13 +63,12 @@ class PostControllers {
   async createPost(req, res, next) {
     try {
       const { title, content, author, category } = req.body;
-      const userId = req.user._id.toString();
+      const userId = req.user;
       const { error } = validator.createPostSchema.validate({
         title,
         content,
         author,
         category,
-        userId,
       });
       if (error) {
         return next(new AppError(error.details[0].message, 400));
@@ -77,8 +77,12 @@ class PostControllers {
         title,
         content,
         author,
+        user: userId,
         category,
-        userId: req.user._id,
+      });
+      await post.populate({
+        path: "user",
+        select: "email username",
       });
       return res.status(201).json({
         status: "success",
@@ -95,7 +99,7 @@ class PostControllers {
   async updatePost(req, res, next) {
     try {
       const { title, content, author, category } = req.body;
-      const { userId } = req.user;
+      const userId = req.user._id;
       const postId = req.params.id;
       if (!postId.match(/^[0-9a-fA-F]{24}$/)) {
         return next(new AppError("Invalid post ID format", 400));
@@ -104,7 +108,11 @@ class PostControllers {
       if (!existingPost) {
         return next(new AppError("Post not found", 404));
       }
-      if (existingPost.userId.toString() !== userId) {
+      if (existingPost.isDeleted) {
+        return next(new AppError("Cannot update deleted post", 400));
+      }
+
+      if (!existingPost.user.equals(userId)) {
         return next(new AppError("Unauthorized", 403));
       }
       const { error } = validator.updatePostSchema.validate({
@@ -112,21 +120,22 @@ class PostControllers {
         content,
         author,
         category,
-        userId,
+        // userId,
       });
       if (error) {
         return next(new AppError(error.details[0].message, 400));
       }
+
       const post = await Post.findByIdAndUpdate(
         postId,
-        { title, content, author, category },
+        { title, content, author, category, isEdited: true },
         {
           new: true,
           runValidators: true,
         }
       ).populate({
-        path: "userId",
-        select: "email",
+        path: "user",
+        select: "email username",
       });
       return res.status(200).json({
         status: "success",
@@ -167,15 +176,17 @@ class PostControllers {
       const isPostOwner = post.userId.toString() === userId.toString();
 
       // Checks authorization
-      if (isAdmin || isModerator || isPostOwner) {
-        await Post.findByIdAndDelete(postId);
-        return res.status(200).json({
-          status: "success",
-          message: "Post deleted successfully",
-        });
+      if (!isAdmin && !isModerator && !isPostOwner) {
+        return next(new AppError("Not authorized to delete this post", 403));
       }
+      await Post.findByIdAndDelete(postId);
 
-      return next(new AppError("Not authorized to delete this post", 403));
+      await Comment.deleteMany({ post: postId });
+
+      return res.status(200).json({
+        status: "success",
+        message: "Post deleted successfully",
+      });
     } catch (error) {
       return next(new AppError(`Delete post failed: ${error.message}`, 500));
     }

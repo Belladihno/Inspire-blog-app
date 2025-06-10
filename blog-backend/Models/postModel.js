@@ -4,7 +4,6 @@ const postSchema = new mongoose.Schema(
   {
     title: {
       type: String,
-      unique: true,
       required: true,
     },
     content: {
@@ -13,6 +12,11 @@ const postSchema = new mongoose.Schema(
     },
     author: {
       type: String,
+      required: true,
+    },
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
       required: true
     },
     views: {
@@ -21,8 +25,14 @@ const postSchema = new mongoose.Schema(
     },
     image: {
       type: String,
-      required: false,
+      trim: true,
     },
+    images: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
     category: {
       type: String,
       required: true,
@@ -40,23 +50,17 @@ const postSchema = new mongoose.Schema(
         ref: "User",
       },
     ],
-    comments: [
-      {
-        user: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "User",
-        },
-        text: String,
-        date: {
-          type: Date,
-          default: Date.now,
-        },
-      },
-    ],
-    userId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: [true, "User ID is required"],
+    commentCount: {
+      type: Number,
+      default: 0,
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    isEdited: {
+      type: Boolean,
+      default: false,
     },
   },
   {
