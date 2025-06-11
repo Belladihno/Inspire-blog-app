@@ -38,14 +38,13 @@ class CommentControllers {
     try {
       const { content } = req.body;
       const { postId } = req.params;
-      const userId = req.user._id.toString();
+      const userId = req.user._id;
 
       if (!postId.match(/^[0-9a-fA-F]{24}$/)) {
         return next(new AppError("Invalid post ID format", 400));
       }
       const { error } = validator.createCommentSchema.validate({
         content,
-        userId,
       });
       if (error) {
         return next(new AppError(error.details[0].message, 400));
@@ -57,7 +56,7 @@ class CommentControllers {
       }
       const newComment = await Comment.create({
         content,
-        user: req.user._id,
+        user: userId,
         post: postId,
       });
 
@@ -83,7 +82,7 @@ class CommentControllers {
     try {
       const { content } = req.body;
       const { postId, commentId } = req.params;
-      const userId = req.user._id.toString();
+      const userId = req.user._id;
 
       if (!postId.match(/^[0-9a-fA-F]{24}$/)) {
         return next(new AppError("Invalid post ID format", 400));
@@ -94,7 +93,6 @@ class CommentControllers {
 
       const { error } = validator.updateCommentSchema.validate({
         content,
-        userId,
       });
       if (error) {
         return next(new AppError(error.details[0].message, 400));
@@ -112,7 +110,7 @@ class CommentControllers {
       if (!comment) {
         return next(new AppError("comment not found", 404));
       }
-      if (comment.user.toString() !== userId) {
+      if (comment.user._id.toString() !== userId.toString()) {
         return next(new AppError("You can only update your own comment!", 403));
       }
       const updatedComment = await Comment.findByIdAndUpdate(
@@ -139,7 +137,7 @@ class CommentControllers {
   async deleteComment(req, res, next) {
     try {
       const { postId, commentId } = req.params;
-      const userId = req.user._id.toString();
+      const userId = req.user._id;
 
       if (!postId.match(/^[0-9a-fA-F]{24}$/)) {
         return next(new AppError("Invalid post ID format", 400));
@@ -157,7 +155,7 @@ class CommentControllers {
         return next(new AppError("comment not found", 404));
       }
 
-      if (comment.user.toString() !== userId) {
+      if (comment.user._id.toString() !== userId.toString()) {
         return next(new AppError("You can only delete your own comment!", 403));
       }
       await Comment.findByIdAndDelete(commentId);

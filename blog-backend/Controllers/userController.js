@@ -154,8 +154,6 @@ class UserController {
       existingUser.password = hashedPassword;
       existingUser.passwordChangedAt = new Date();
       await existingUser.save();
-      // Clear any existing token
-      res.clearCookie("Authorization");
       return res.status(200).json({
         success: true,
         message: "Password updated successfully!. Please login again.",

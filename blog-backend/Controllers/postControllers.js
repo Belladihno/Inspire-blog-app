@@ -173,7 +173,7 @@ class PostControllers {
 
       const isAdmin = role === "admin";
       const isModerator = role === "moderator";
-      const isPostOwner = post.userId.toString() === userId.toString();
+      const isPostOwner = post.user.toString() === userId.toString();
 
       // Checks authorization
       if (!isAdmin && !isModerator && !isPostOwner) {
